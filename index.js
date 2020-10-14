@@ -47,9 +47,18 @@ app.get('/api/persons/:id', (req, res) => {
 app.post('/api/persons', (req, res) => {
   let body = req.body;
 
-  if(!body) {
-    return res.status(400).json({error: 'No content sent'});
+  if(!body.name || !body.number) {
+    return res.status(400).json({
+      error: `You must include a ${!body.name ? 'name' : 'number'} for a valid entry`
+    });
   }
+
+  if(persons.some(person => person.name.toLowerCase() === body.name.toLowerCase())) {
+    return res.status(400).json({
+      error: 'That person already exists in the phonebook!'
+    })
+  }
+
   let person = {
     name: body.name,
     number: body.number,
