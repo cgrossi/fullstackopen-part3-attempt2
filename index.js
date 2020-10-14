@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
 
+app.use(express.json());
+
 let persons = [
   {
     "name": "Carmine",
@@ -24,6 +26,8 @@ let persons = [
   }
 ]
 
+const generateId = () => Math.floor(Math.random() * 100000);
+
 app.get('/api/persons', (req, res) => {
   res.json(persons);
 })
@@ -37,6 +41,23 @@ app.get('/api/persons/:id', (req, res) => {
   } else {
     res.status(404).end();
   }
+})
+
+// Add a person to the phonebook
+app.post('/api/persons', (req, res) => {
+  let body = req.body;
+
+  if(!body) {
+    return res.status(400).json({error: 'No content sent'});
+  }
+  let person = {
+    name: body.name,
+    number: body.number,
+    id: generateId()
+  }
+
+  persons = persons.concat(person);
+  res.json(person);
 })
 
 // Delete a person from the phonebook
