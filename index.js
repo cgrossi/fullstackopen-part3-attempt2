@@ -28,6 +28,17 @@ app.get('/api/persons', (req, res) => {
   res.json(persons);
 })
 
+// Get a single person's number
+app.get('/api/persons/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const person = persons.find(person => person.id === id);
+  if(person) {
+    res.json(person);
+  } else {
+    res.status(404).end();
+  }
+})
+
 app.get('/info', (req, res) => {
   let date = new Date().toString();
   console.log(date.toString())
