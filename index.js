@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 
-const persons = [
+let persons = [
   {
     "name": "Carmine",
     "number": "403-901-7458",
@@ -34,6 +34,18 @@ app.get('/api/persons/:id', (req, res) => {
   const person = persons.find(person => person.id === id);
   if(person) {
     res.json(person);
+  } else {
+    res.status(404).end();
+  }
+})
+
+// Delete a person from the phonebook
+app.delete('/api/persons/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const person = persons.find(person => person.id === id);
+  if(person) {
+    persons = persons.filter(person => person.id !== id);
+    res.status(204).end();
   } else {
     res.status(404).end();
   }
