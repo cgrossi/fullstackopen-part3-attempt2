@@ -1,5 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
+
+const Person = require('./models/person');
+
 const cors = require('cors');
 const morgan = require('morgan');
 
@@ -11,7 +15,8 @@ app.use(express.json());
 morgan.token('data', (req, res) => {
   if(req.method === "POST") return JSON.stringify(req.body)
 })
-  
+
+// Use morgan as request logger
 app.use(morgan((tokens, req, res) => {
   return [
     tokens.method(req, res),
@@ -23,89 +28,85 @@ app.use(morgan((tokens, req, res) => {
   ].join(' ')
 }));
 
-let persons = [
-  {
-    "name": "Carmine",
-    "number": "403-901-7458",
-    "id": 8
-  },
-  {
-    "name": "Jill",
-    "number": "934-3677",
-    "id": 9
-  },
-  {
-    "name": "Traci",
-    "number": "34634664346346",
-    "id": 10
-  },
-  {
-    "name": "Jane",
-    "number": "4039876543",
-    "id": 11
-  }
-]
-
-const generateId = () => Math.floor(Math.random() * 100000);
-
+// Get the full list of contacts in phonebook
 app.get('/api/persons', (req, res) => {
-  res.json(persons);
+  Person.find({}).then(persons => {
+    res.json(persons);
+  })
 })
 
 // Get a single person's number
-app.get('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const person = persons.find(person => person.id === id);
-  if(person) {
-    res.json(person);
-  } else {
-    res.status(404).end();
-  }
+app.get('/api/persons/:id', (req, res, next) => {
+  Person.findById(req.params.id)
+    .then(result => {
+      res.json(result)
+    })
+    .catch(e => next(e))
 })
 
 // Add a person to the phonebook
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
   let body = req.body;
-
-  if(!body.name || !body.number) {
-    return res.status(400).json({
-      error: `You must include a ${!body.name ? 'name' : 'number'} for a valid entry`
-    });
-  }
-
-  if(persons.some(person => person.name.toLowerCase() === body.name.toLowerCase())) {
-    return res.status(400).json({
-      error: 'That person already exists in the phonebook!'
-    })
-  }
-
-  let person = {
+  
+  const person = new Person({
     name: body.name,
-    number: body.number,
-    id: generateId()
-  }
+    number: body.number
+  })
 
-  persons = persons.concat(person);
-  res.json(person);
+  person.save()
+    .then(returnedPerson => {
+      res.json(returnedPerson);
+    })
+    .catch(e => next(e))
 })
 
 // Delete a person from the phonebook
-app.delete('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const person = persons.find(person => person.id === id);
-  if(person) {
-    persons = persons.filter(person => person.id !== id);
-    res.status(204).end();
-  } else {
-    res.status(404).end();
+app.delete('/api/persons/:id', (req, res, next) => {
+  Person.findByIdAndRemove(req.params.id)
+    .then(result => {
+      res.status(204).end();
+    })
+    .catch(e => next(e))
+})
+
+// Update existing contacts number
+app.put('/api/persons/:id', (req, res, next) => {
+  const body = req.body
+  const person = {
+    name: body.name,
+    number: body.number
   }
+
+  Person.findByIdAndUpdate(req.params.id, person, {new: true})
+    .then(updatedPerson => {
+      res.json(updatedPerson);
+    })
+    .catch(e => next(e))
 })
 
 app.get('/info', (req, res) => {
-  let date = new Date().toString();
-  console.log(date.toString())
-  res.send(`<p>Phonebook has info for ${persons.length} people.</p><p>${date}</p>`);
+  Person.find({}).then(result => {
+    let date = new Date().toString();
+    const numEntries = result.length
+    res.send(`<p>Phonebook has info for ${numEntries} people.</p><p>${date}</p>`);
+  })
 })
+
+const errorHandler = (error, req, res, next) => {
+  console.log(error.message)
+
+  if(error.name === "CastError") {
+    return res.status(400).send({ error: 'Malformatted id'})
+  } else if (error.name === "ValidationError") {
+    return res.status(400).json({
+      error: error.message
+    })
+  }
+
+  next(error)
+}
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
