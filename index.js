@@ -1,19 +1,21 @@
-require('dotenv').config();
-const express = require('express');
-const app = express();
+/* eslint-disable no-undef */
+/* eslint-disable linebreak-style */
+require('dotenv').config()
+const express = require('express')
+const app = express()
 
-const Person = require('./models/person');
+const Person = require('./models/person')
 
-const cors = require('cors');
-const morgan = require('morgan');
+const cors = require('cors')
+const morgan = require('morgan')
 
-app.use(express.static('build'));
+app.use(express.static('build'))
 
-app.use(cors());
-app.use(express.json());
+app.use(cors())
+app.use(express.json())
 
-morgan.token('data', (req, res) => {
-  if(req.method === "POST") return JSON.stringify(req.body)
+morgan.token('data', (req) => {
+  if(req.method === 'POST') return JSON.stringify(req.body)
 })
 
 // Use morgan as request logger
@@ -26,12 +28,12 @@ app.use(morgan((tokens, req, res) => {
     tokens['response-time'](req, res), 'ms',
     tokens.data(req, res)
   ].join(' ')
-}));
+}))
 
 // Get the full list of contacts in phonebook
 app.get('/api/persons', (req, res) => {
   Person.find({}).then(persons => {
-    res.json(persons);
+    res.json(persons)
   })
 })
 
@@ -46,7 +48,7 @@ app.get('/api/persons/:id', (req, res, next) => {
 
 // Add a person to the phonebook
 app.post('/api/persons', (req, res, next) => {
-  let body = req.body;
+  let body = req.body
 
   const person = new Person({
     name: body.name,
@@ -55,7 +57,7 @@ app.post('/api/persons', (req, res, next) => {
 
   person.save()
     .then(returnedPerson => {
-      res.json(returnedPerson);
+      res.json(returnedPerson)
     })
     .catch(e => next(e))
 })
@@ -63,8 +65,8 @@ app.post('/api/persons', (req, res, next) => {
 // Delete a person from the phonebook
 app.delete('/api/persons/:id', (req, res, next) => {
   Person.findByIdAndRemove(req.params.id)
-    .then(result => {
-      res.status(204).end();
+    .then(() => {
+      res.status(204).end()
     })
     .catch(e => next(e))
 })
@@ -77,27 +79,27 @@ app.put('/api/persons/:id', (req, res, next) => {
     number: body.number
   }
 
-  Person.findByIdAndUpdate(req.params.id, person, {new: true})
+  Person.findByIdAndUpdate(req.params.id, person, { new: true })
     .then(updatedPerson => {
-      res.json(updatedPerson);
+      res.json(updatedPerson)
     })
     .catch(e => next(e))
 })
 
 app.get('/info', (req, res) => {
   Person.find({}).then(result => {
-    let date = new Date().toString();
+    let date = new Date().toString()
     const numEntries = result.length
-    res.send(`<p>Phonebook has info for ${numEntries} people.</p><p>${date}</p>`);
+    res.send(`<p>Phonebook has info for ${numEntries} people.</p><p>${date}</p>`)
   })
 })
 
 const errorHandler = (error, req, res, next) => {
   console.log(error.message)
 
-  if(error.name === "CastError") {
-    return res.status(400).send({ error: 'Malformatted id'})
-  } else if (error.name === "ValidationError") {
+  if(error.name === 'CastError') {
+    return res.status(400).send({ error: 'Malformatted id' })
+  } else if (error.name === 'ValidationError') {
     return res.status(400).json({
       error: error.message
     })
@@ -108,7 +110,7 @@ const errorHandler = (error, req, res, next) => {
 
 app.use(errorHandler)
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`The server is running on port ${PORT}`)
 })
