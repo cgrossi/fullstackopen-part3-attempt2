@@ -47,7 +47,7 @@ app.get('/api/persons/:id', (req, res, next) => {
 // Add a person to the phonebook
 app.post('/api/persons', (req, res, next) => {
   let body = req.body;
-  
+
   const person = new Person({
     name: body.name,
     number: body.number
@@ -108,7 +108,7 @@ const errorHandler = (error, req, res, next) => {
 
 app.use(errorHandler)
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`The server is running on port ${PORT}`)
 })
